@@ -27,5 +27,5 @@ def sql_from_bq(project, dataset, table, int_val, int_size):
     # pandas dataframe if the API is enabled on the project, the
     # `google-cloud-bigquery-storage` package is installed, and the `pyarrow`
     # package is installed.
-    df2 = client.query(sql).to_dataframe()
-    return(df2)
+    df = client.query(sql).to_dataframe()
+    return(df)
