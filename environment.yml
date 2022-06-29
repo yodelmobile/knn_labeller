@@ -1,0 +1,7 @@
+
+name: appsflyer_env2
+dependencies:
+  - python>=3.9.0
+  - pip
+  - pip:
+    - -r requirements.txt
