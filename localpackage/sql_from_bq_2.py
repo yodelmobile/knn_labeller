@@ -1,5 +1,5 @@
 # Load sql_from_bq into the workspace
-def sql_from_bq(project, dataset, table, int_val, int_size):
+def sql_from_bq(project, dataset, table):
     """Set up SQL query and returns a dataFrame df2 from table."""
     
     from google.cloud import bigquery
@@ -21,7 +21,7 @@ def sql_from_bq(project, dataset, table, int_val, int_size):
     
     table_id = project + '.' + dataset + '.' + table
     
-    sql = "SELECT * FROM " + table_id + " WHERE DATE(date) BETWEEN DATE_SUB(CURRENT_DATE(), INTERVAL " + int_val + " " + int_size + ") AND CURRENT_DATE() ORDER BY date"
+    sql = "SELECT * FROM {} ORDER BY date DESC".format(table_id)
     
     # The client library uses the BigQuery Storage API to download results to a
     # pandas dataframe if the API is enabled on the project, the
