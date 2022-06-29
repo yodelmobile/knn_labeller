@@ -17,35 +17,39 @@ from sklearn.pipeline import Pipeline
 
 #### Variable Assignment ####
 
+# Set GCP project, dataset and Cloud Storage bucket variables from environment variables
+project = config('PROJECT') # project
+dataset = config('DATASET')
+
 # Column name of the target column for prediction
-target_col = 'channel'
+target_col = config('TARGETCOL')
 
 # Set drop threshold for low_row_drop() function
-drop_thresh = 100
+drop_thresh = config('DROPTHRESH')
 
 # Set pattern and replacement variables for strip_non_values() function call
 pattern = '(^$|^ $|^None$|^-$|^Unknown$)'
 replacement = np.nan
 
 # Set u_val_cap, maximum number of unique values for columns
-u_val_cap=800
+u_val_cap= config('COLTHRESH')
 
 # Null thresh is the max percentage threshold for null values per column.
-null_thresh = 0.85
+null_thresh = config('NULLTHRESH')
 
 # Number of columns that must be non-null for all rows
-no_null_cols = 12
+no_null_cols = config('N_NULLCOLS')
 
 # Set training set random sample length variable
-sample_length = 50000
+sample_length = config('SAMPLENGTH')
 
 #List of Hyperparameter lists that to use for GridSearch.
-list_leaf_size = [1,2,28,29,30,31,32]
-list_n_neighbors = list(range(3,18))
-list_p = [1,2]
-list_algorithm=['auto']
-list_metric=['minkowski']
-list_weights=['distance']
+list_leaf_size = config('LEAF_SIZE_LIST')
+list_n_neighbors = config('K_N_LIST')
+list_p = config('P_LIST')
+list_algorithm= config('ALGO_LIST')
+list_metric= config('METRIC_LIST')
+list_weights= config('DIST_LIST')
 
 # Set test_pct variable to determine the train/test split share
 test_pct = 0.40
