@@ -54,17 +54,20 @@ def main(request):
 
     # Set training set random sample length variable
     sample_length = config('SAMPLENGTH')
+    
+    # Set cv, the number of folds used by the GridSearchCV() alg
+    cv_val = config('CV_VALUE')
 
     #List of Hyperparameter lists that to use for GridSearch.
     list_leaf_size = config('LEAF_SIZE_LIST')
     list_n_neighbors = config('K_N_LIST')
     list_p = config('P_LIST')
-    list_algorithm= config('ALGO_LIST')
-    list_metric= config('METRIC_LIST')
-    list_weights= config('DIST_LIST')
+    list_algorithm = config('ALGO_LIST')
+    list_metric = config('METRIC_LIST')
+    list_weights = config('DIST_LIST')
 
     # Set test_pct variable to determine the train/test split share
-    test_pct = 0.40
+    test_pct = cconfig('TEST_PERCENTAGE')
 
     #
     #
@@ -398,7 +401,7 @@ def main(request):
         pipeline = Pipeline(steps)
 
         # Use GridSearch to discern highest accuracy hyperparameters
-        clf = GridSearchCV(pipeline, hyperparameters, cv=10, scoring='accuracy')
+        clf = GridSearchCV(pipeline, hyperparameters, cv=cv_val, scoring='accuracy')
 
         # Fit the model
         result = clf.fit(X_train,y_train)
@@ -488,8 +491,13 @@ def main(request):
     ### 4.0 Merge and export data
 
     #### Merge processed data with previous by date and export to BigQuery ####
-    df_export =  = pd.concat([df_hold, df_final])
+    df_export = pd.concat([df_hold, df_final])
     df_export.sort_values(by='date', inplace=True)
     df_export.reindex()
-
+    
+    # Export the final merged df to BigQuery
     df_to_bq(df_export, project, dataset, table)
+    
+    
+    
+    
