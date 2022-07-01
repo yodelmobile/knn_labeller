@@ -1,88 +1,153 @@
-def main(request):
+### 0.0 Add libraries
+
+# Import funciton libraries
+import requests
+from datetime import date, timedelta, datetime, timezone
+import logging
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import GridSearchCV
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.pipeline import Pipeline
+import string
+import io
+from google.cloud import bigquery
+from google.cloud import storage
+import os
+import flask
+from decouple import config
+
+# Import local functions from localpackage
+from localpackage.if_tbl_exists import if_tbl_exists
+from localpackage.sql_from_bq import sql_from_bq
+from localpackage.sql_from_bq_date.py import sql_from_bq_date
+from localpackage.concat_df import concat_df
+from localpackage.df_to_bq import df_to_bq
+
+#
+#
+#
+#
+#
+### 1.0 Assign required variables
+
+#### Variable Assignment ####
+
+# Set GCP project, dataset and Cloud Storage bucket variables from environment variables
+project = config('PROJECT') # project inc all datasets and tables
+source_dataset = config('S_DATASET') 
+source_table = config('S_TABLE')
+dest_dataset = config('D_DATASET')
+dest_table = config('D_TABLE')
+
+# Set date variables in relation to today MAX and MIN DELTA values indicate number of days prior to today that reporting starts/finishes
+max_day_delta = int(config("MAX_DELTA")) #Suggested 14 for weekly, 35 for monthly
+min_day_delta = int(config("MIN_DELTA")) #Suggested 1 for yesterday
+today = date.today()
+time_now = pd.to_datetime(datetime.now(tz=timezone.utc), utc=True)
+
+
+date_from = today - timedelta(days = max_day_delta)
+date_to = today - timedelta(days = min_day_delta)
+# Set the datetime from variable
+datetime_from = pd.to_datetime(date_from).floor('D').tz_localize('utc')
+datetime_to = pd.to_datetime(date_to).floor('D').tz_localize('utc')
+
+# Column name of the target column for prediction
+target_col = config('TARGETCOL')
+
+# Set new variable target_new wich is target_col(_new)
+target_new = target_col+'_new'
+
+# Create column header for target col probability column
+prob_head = target_col+'_probs'
+
+# Set drop threshold for low_row_drop() function
+drop_thresh = config('DROPTHRESH')
+
+# Set pattern and replacement variables for strip_non_values() function call
+pattern = '(^$|^ $|^None$|^-$|^Unknown$)'
+replacement = np.nan
+
+# Set u_val_cap, maximum number of unique values for columns
+u_val_cap = ('COLTHRESH') #Suggested 800
+
+# Null thresh is the max percentage threshold for null values per column.
+null_thresh =  config('NULLTHRESH') #Suggested 0.75
+
+# Number of columns that must be non-null for all rows
+no_null_cols = config('N_NULLCOLS') #suggested 11
+
+# Set training set random sample length variable
+sample_length = config('SAMPLENGTH') # suggested no less than 35000 - 50000 for larger time bases
+
+#List of Hyperparameter lists that to use for GridSearch.
+list_leaf_size = list(range(27,32)) #config('LEAF_SIZE_LIST')
+list_n_neighbors = list(range(1,15)) #config('K_N_LIST')
+list_p = list(range(1,3)) #config('P_LIST')
+list_algorithm = ['auto'] #config('ALGO_LIST')
+list_metric = ['minkowski'] #config('METRIC_LIST')
+list_weights = ['distance'] #config('DIST_LIST')
+
+knnargs = {
+    'leaf_size':list_leaf_size, 'n_neighbors':list_n_neighbors,
+    'p':list_p,'algorithm':list_algorithm, 'metric':list_metric, 
+    'weights':list_weights
+         }
+
+#List Hyperparameters that we want to tune with defaults for missing values.
+leaf_size = knnargs.get('leaf_size', list(range(27,32)))
+n_neighbors = knnargs.get('n_neighbors', list(range(1,15)))
+p = knnargs.get('p', list(range(1,3)))
+algorithm = knnargs.get('algorithm', ['auto'])
+metric = knnargs.get('metric', ['minkowski'])
+weights = knnargs.get('weights', ['distance'])
+
+# Set test_pct variable to determine the train/test split share
+test_pct = 0.40
+
+#
+#
+#
+#
+#
+### 2.0 Import data
+def main():
     
-    ### 0.0 Add libraries
-    from datetime import date, timedelta, datetime
-    import pandas as pd
-    # from google.cloud import bigquery
-    # from google.cloud import storage
-    import numpy as np
-    import string
-    from sklearn.model_selection import train_test_split
-    # import matplotlib.pyplot as plt
-    from sklearn.preprocessing import LabelEncoder
-    from sklearn.preprocessing import StandardScaler
-    from sklearn.model_selection import GridSearchCV
-    from sklearn.neighbors import KNeighborsClassifier
-    from sklearn.pipeline import Pipeline
-
-    ### 1.0 Assign required variables
-
-    #### Variable Assignment ####
-
-    # Set GCP project, dataset and Cloud Storage bucket variables from environment variables
-    project = config('PROJECT') # project
-    dataset = config('DATASET')
-    table = config('TABLE')
-
-    # Set date variables in relation to today MAX and MIN DELTA values indicate number of days prior to today that reporting starts/finishes
-    max_day_delta = int(config("MAX_DELTA"))
-    min_day_delta = int(config("MIN_DELTA"))
-    today = date.today()
-    date_from = today - timedelta(days = max_day_delta)
-    date_to = today - timedelta(days = min_day_delta)
-    # Set the datetime from variable
-    datetime_from = pd.to_datetime(date_from).floor('D').tz_localize('utc')
-
-    # Column name of the target column for prediction
-    target_col = config('TARGETCOL')
-
-    # Set drop threshold for low_row_drop() function
-    drop_thresh = config('DROPTHRESH')
-
-    # Set pattern and replacement variables for strip_non_values() function call
-    pattern = '(^$|^ $|^None$|^-$|^Unknown$)'
-    replacement = np.nan
-
-    # Set u_val_cap, maximum number of unique values for columns
-    u_val_cap= config('COLTHRESH')
-
-    # Null thresh is the max percentage threshold for null values per column.
-    null_thresh = config('NULLTHRESH')
-
-    # Number of columns that must be non-null for all rows
-    no_null_cols = config('N_NULLCOLS')
-
-    # Set training set random sample length variable
-    sample_length = config('SAMPLENGTH')
-    
-    # Set cv, the number of folds used by the GridSearchCV() alg
-    cv_val = config('CV_VALUE')
-
-    #List of Hyperparameter lists that to use for GridSearch.
-    list_leaf_size = config('LEAF_SIZE_LIST')
-    list_n_neighbors = config('K_N_LIST')
-    list_p = config('P_LIST')
-    list_algorithm = config('ALGO_LIST')
-    list_metric = config('METRIC_LIST')
-    list_weights = config('DIST_LIST')
-
-    # Set test_pct variable to determine the train/test split share
-    test_pct = cconfig('TEST_PERCENTAGE')
-
-    #
-    #
-    #
-    #
-    #
-    ### 2.0 Import data
-
     #### Data import and selection ####
-    df_init = sql_from_bq(project, dataset, table)
+    df_init = sql_from_bq_date(project, source_dataset, source_table, date_from, date_to)
 
-    df_hold = df.loc[df['date'] <= date_from]
-    df_use = df.loc[df['date'] > date_from]
+
+    # Stage 1 data check 
+    unique_cols_count = df_init.nunique()
+    channel_count = len(df_init['channel'].unique())
+    print('Number of rows in df_init: {}'.format(df_init.shape[0]))
+    print('Number of columns in df_init: {}'.format(df_init.shape[1]))
+    print('Number of cols with only one value: {}'.format((unique_cols_count==1).sum()))
+    print('Number of unique values in the channel column: {}'.format(channel_count))
+
+    # df_hold is already predicted data
+    df_hold = df_init.loc[df_init['date'] <= datetime_from]
+
+    # df_use is the recent data to be used to train and predict
+    df_use = df_init.loc[df_init['date'] > datetime_from]
+
+    # Normalise the target_col column of df using regex
+
+    #### Regex to normailze existing target_col values ####
+    # Use regex replace on target col with pattern to find and normalize values
+    df_use.loc[:,target_col] = df_use.loc[:,target_col].replace(
+        [r'^.*Organic.*$', 'Apple.*$','Google (Ads|Ad[Ww]ords).*$','^.*(Facebook|Instagram|Messenger|IG).*$',
+         'TikTok.*$','^.*Snap.*$','^.*MOLOCO.*$'],
+        [r'Organic','Apple Search','Google Ads','Facebook','TikTok Ads','Snapchat Ads','MOLOCO'], 
+        regex=True
+    )
 
     df = df_use.copy()
+    
     #
     #
     #
@@ -196,7 +261,7 @@ def main(request):
         # the .apply() method: x.astype('category').
         categorize_label = lambda x: x.astype('category')
         # Pass df[LABELS] to the lambda function above and assign back to df[LABELS] 
-        #to convert the subset of data df[LABELS] to type 'category'.
+        # to convert the subset of data df[LABELS] to type 'category'.
         df[LABELS] = categorize_label(df[LABELS])
         return(df)
 
@@ -260,21 +325,7 @@ def main(request):
     #
     #
     #
-
     #### Data Cleaning, normalization and encoding of dataframe ####
-
-    # Normalise the channel column of df using regex
-    target_col = 'channel'
-
-    #### Regex to normailze existing target_col values ####
-    # Use regex replace on target col with pattern to find and normalize values
-    df[target_col] = df[target_col].replace(
-        [r'^.*Organic.*$', 'Apple.*$','Google (Ads|Ad[Ww]ords).*$','^.*(Facebook|Instagram|Messenger|IG).*$',
-         'TikTok.*$','^.*Snap.*$','^.*MOLOCO.*$'],
-        [r'Organic','Apple Search','Google Ads','Facebook','TikTok Ads','Snapchat Ads','MOLOCO'], 
-        regex=True
-    )
-
 
     # Use above defined low_row_drop() function to drop all rows that occur less than 100 times per unique channel value  
     df = low_row_drop(df, column=target_col, thresh=drop_thresh)
@@ -318,24 +369,23 @@ def main(request):
 
     # Run split_by_mask using null value 'channel' mask from above to split out train and prediction data
     train, pred = split_by_mask(df_conv, mask, selected_col=target_col)
-
+    
     #
     #
     #
     #
     #
-
     #### Sort values and reduce size of train set to reduce training time on machine ####
+
     # Set length of train
     if (train.shape[0]) <= sample_length:
-        train_r = train.sort_values('date',ascending = False)
+        train_r = train#.sort_values('date',ascending = False)
     else:
         train_r = train.sample(n=sample_length)#.sort_values('date',ascending = False)
 
     pred_r = pred.sort_values('date',ascending = False)
 
     train_r = train_r.sort_values('date',ascending = False)
-
     #
     #
     #
@@ -401,7 +451,7 @@ def main(request):
         pipeline = Pipeline(steps)
 
         # Use GridSearch to discern highest accuracy hyperparameters
-        clf = GridSearchCV(pipeline, hyperparameters, cv=cv_val, scoring='accuracy')
+        clf = GridSearchCV(pipeline, hyperparameters, cv=10, scoring='accuracy')
 
         # Fit the model
         result = clf.fit(X_train,y_train)
@@ -425,13 +475,13 @@ def main(request):
         y_preds = np.array((y_pred,max_probs)).T
 
         return(y_preds, score)
-    #
-    #
-    #
-    #
-    #
 
-    #### KNN missing value imputation method from https://www.askpython.com/python/examples/impute-missing-data-values
+    #
+    #
+    #
+    #
+    #
+    #### KNN missing value imputation method including Grid Search to tune hyperparameters
 
     # Use above defined tts_func() to split the 'train' dataFrame into train and test sets
     X_train, X_test, y_train, y_test, X_pred, y_pred = tts_func(train_r, pred_r, target_col= target_col, test_size=test_pct)
@@ -442,11 +492,12 @@ def main(request):
                                    algorithm= list_algorithm, metric= list_metric, 
                                    weights= list_weights)
 
+    # Print out test score results
+    score = score*100
+    print('Grid search complete and test data gives prediction accuracy of: {}%'.format(score))
+
     # Turn numpy array of predicted values into dataFrame using index of pred_r
     df_pred = pd.DataFrame(y_preds, index=pred_r.index.copy())
-
-    # Create column header for target col probability column
-    prob_head = target_col+'_probs'
 
     # Name column of df_pred with the target_col variable
     df_pred.columns = [target_col, prob_head]
@@ -457,11 +508,8 @@ def main(request):
     # Convert df_pred back to text using the LabelEncoder() dictionary le_dict
     df_pred = numbers_to_text(df_pred, le_dict)
 
-    # convert pred dataFrame back to text
+    # Split the original df (unencoded) the same way we split the encoded df above
     df_k, df_u = split_by_mask(df, mask, selected_col= target_col)
-
-    # Set new variable target_new wich is target_col(_new)
-    target_new = target_col+'_new'
 
     # Change colname of target_col in df_pred
     df_pred=df_pred.rename(columns = {target_col:target_new})
@@ -482,6 +530,8 @@ def main(request):
 
     # Join the 'channel_new' column of the concatenated dfs from above onto df_final
     df_final = df_init.join(df_new_j)
+    
+    df_final.loc[:,'__insert_date'] = time_now
 
     #
     #
@@ -490,14 +540,30 @@ def main(request):
     #
     ### 4.0 Merge and export data
 
-    #### Merge processed data with previous by date and export to BigQuery ####
-    df_export = pd.concat([df_hold, df_final])
-    df_export.sort_values(by='date', inplace=True)
-    df_export.reindex()
+    #### Merge processed data with previous by date and final to BigQuery ####
+    # df_final = pd.concat([df_hold, df_final])
+    df_final.sort_values(by='date', inplace=True)
+
+    # Final stage data check 
+    unique_cols_count = df_final.nunique()
+    channel_count = len(df_final['channel'].unique())
+    channel_new_count = len(df_final['channel_new'].unique())
+    print('Number of rows in df_final: {}'.format(df_final.shape[0]))
+    print('Number of columns in df_final: {}'.format(df_final.shape[1]))
+    print('Number of cols in df_final with only one value: {}'.format((unique_cols_count==1).sum()))
+    print('Number of unique values in the channel column: {}'.format(channel_count))
+    print('Number of unique values in the channel_new column: {}'.format(channel_new_count))
+
+    # final of df_final
+    df_final = df_final.reindex()
     
-    # Export the final merged df to BigQuery
-    df_to_bq(df_export, project, dataset, table)
-    
-    
-    
-    
+    # Pull existing database, combine new predictions and re-write result to existing DB
+    if if_tbl_exists(project=project, dataset=dest_dataset, table=dest_table) == True:
+        # Historic data, inc previous predictions is df_hist
+        df_hist = sql_from_bq(project, dest_dataset, dest_table);
+        df_entire = concat_df(df_final, df_hist, date_from, date_to);
+    else:
+        df_entire = df_final
+    df_to_bq(df_entire, project, dest_dataset, dest_table);
+
+    print('Complete: {} rows written to {} project, {} dataset, {} table'.format(df_entire.shape[0], project, dest_dataset, dest_table))
