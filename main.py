@@ -23,7 +23,7 @@ from decouple import config
 # Import local functions from localpackage
 from localpackage.if_tbl_exists import if_tbl_exists
 from localpackage.sql_from_bq import sql_from_bq
-from localpackage.sql_from_bq_date.py import sql_from_bq_date
+from localpackage.sql_from_bq_date import sql_from_bq_date
 from localpackage.concat_df import concat_df
 from localpackage.df_to_bq import df_to_bq
 
