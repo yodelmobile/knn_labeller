@@ -22,7 +22,7 @@ def sql_from_bq_date(project, dataset, table, date_from, date_to):
     
     table_id = project + '.' + dataset + '.' + table
     
-    sql = "SELECT * FROM {} ORDER BY date DESC".format(table_id)
+    sql = "SELECT * FROM {} WHERE DATE(date) BETWEEN {} AND {}  ORDER BY date DESC".format(table_id, date_from, date_to)
     
     # The client library uses the BigQuery Storage API to download results to a
     # pandas dataframe if the API is enabled on the project, the
