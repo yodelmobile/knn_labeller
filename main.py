@@ -57,7 +57,7 @@ datetime_from = pd.to_datetime(date_from).floor('D').tz_localize('utc')
 datetime_to = pd.to_datetime(date_to).floor('D').tz_localize('utc')
 
 # Column name of the target column for prediction
-target_col = config('TARGETCOL')
+target_col = config('TARGETCOL') # e.g. 'channel'
 
 # Set new variable target_new wich is target_col(_new)
 target_new = target_col+'_new'
@@ -82,7 +82,7 @@ null_thresh =  config('NULLTHRESH') # suggested 0.75
 no_null_cols = config('N_NULLCOLS') # suggested 11
 
 # Set training set random sample length variable
-sample_length = config('SAMPLENGTH') # suggested no less than 35000 - 50000 for larger time bases
+sample_length = config('SAMPLENGTH') # suggested no less than 35000 rows - 50000 for larger (month+) time periods
 
 #List of Hyperparameter lists that to use for GridSearch.
 list_leaf_size = list(range(27,32)) #config('LEAF_SIZE_LIST')
