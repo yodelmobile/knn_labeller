@@ -66,20 +66,20 @@ target_new = target_col+'_new'
 prob_head = target_col+'_probs'
 
 # Set drop threshold for low_row_drop() function
-drop_thresh = config('DROPTHRESH')
+drop_thresh = config('DROPTHRESH') # suggested 100
 
 # Set pattern and replacement variables for strip_non_values() function call
 pattern = '(^$|^ $|^None$|^-$|^Unknown$)'
 replacement = np.nan
 
 # Set u_val_cap, maximum number of unique values for columns
-u_val_cap = ('COLTHRESH') #Suggested 800
+u_val_cap = ('COLTHRESH') # suggested 800
 
 # Null thresh is the max percentage threshold for null values per column.
-null_thresh =  config('NULLTHRESH') #Suggested 0.75
+null_thresh =  config('NULLTHRESH') # suggested 0.75
 
 # Number of columns that must be non-null for all rows
-no_null_cols = config('N_NULLCOLS') #suggested 11
+no_null_cols = config('N_NULLCOLS') # suggested 11
 
 # Set training set random sample length variable
 sample_length = config('SAMPLENGTH') # suggested no less than 35000 - 50000 for larger time bases
@@ -107,7 +107,7 @@ metric = knnargs.get('metric', ['minkowski'])
 weights = knnargs.get('weights', ['distance'])
 
 # Set test_pct variable to determine the train/test split share
-test_pct = 0.40
+test_pct = config('SAMPLENGTH') # Suggested 0.4
 
 #
 #
