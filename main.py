@@ -84,10 +84,13 @@ no_null_cols = int(config('N_NULLCOLS')) # suggested 11
 # Set training set random sample length variable
 sample_length = int(config('SAMPLENGTH')) # suggested no less than 35000 rows - 35000 for larger (month+) time periods
 
-#List of Hyperparameter lists to use for GridSearch hyperparameter tuning.
-list_leaf_size = [int(x) for x in config('LEAFSIZE')] # Recommended default: list(range(27,32)) 
-list_n_neighbors = [int(x) for x in config('K_N_LIST')] # Recommended default: list(range(5,15)) 
-list_p =  [int(x) for x in config('P_LIST')] # Recommended default: list(range(1,3))
+# List of Hyperparameter lists to use for GridSearch hyperparameter tuning.
+leaf_size_tmp = config('LEAFSIZE')
+list_leaf_size = [int(x) for x in leaf_size_tmp] # Recommended default: list(range(27,32)) 
+n_neighbors_tmp = config('K_N_LIST')
+list_n_neighbors = [int(x) for x in n_neighbors_tmp] # Recommended default: list(range(5,15))
+p_tmp = config('P_LIST')
+list_p =  [int(x) for x in p_tmp] # Recommended default: list(range(1,3))
 list_algorithm = ['auto'] # Could switch for: config('ALGO_LIST')
 list_metric = ['minkowski'] # Could switch for: config('METRIC_LIST')
 list_weights = ['distance'] # Could switch for: config('DIST_LIST')
