@@ -115,7 +115,7 @@ test_pct = 0.40
 #
 #
 ### 2.0 Import data
-def main():
+def main(request):
     
     #### Data import and selection ####
     df_init = sql_from_bq_date(project, source_dataset, source_table, date_from, date_to)
