@@ -1,4 +1,3 @@
-
 # Load sql_from_bq into the workspace
 def sql_from_bq_date(project, dataset, table, date_from, date_to):
     """Set up SQL query and returns a dataFrame df2 from table."""
