@@ -86,10 +86,13 @@ sample_length = int(config('SAMPLENGTH')) # suggested no less than 35000 rows - 
 
 # List of Hyperparameter lists to use for GridSearch hyperparameter tuning.
 leaf_size_tmp = config('LEAFSIZE')
+leaf_size_tmp = leaf_size_tmp.split(',')
 list_leaf_size = [int(x) for x in leaf_size_tmp] # Recommended default: list(range(27,32)) 
 n_neighbors_tmp = config('K_N_LIST')
+n_neighbors_tmp = n_neighbors_tmp.split(',')
 list_n_neighbors = [int(x) for x in n_neighbors_tmp] # Recommended default: list(range(5,15))
 p_tmp = config('P_LIST')
+p_tmp = p_tmp.split(',')
 list_p =  [int(x) for x in p_tmp] # Recommended default: list(range(1,3))
 list_algorithm = ['auto'] # Could switch for: config('ALGO_LIST')
 list_metric = ['minkowski'] # Could switch for: config('METRIC_LIST')
