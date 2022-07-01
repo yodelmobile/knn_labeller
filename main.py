@@ -66,31 +66,31 @@ target_new = target_col+'_new'
 prob_head = target_col+'_probs'
 
 # Set drop threshold for low_row_drop() function
-drop_thresh = config('DROPTHRESH') # suggested 100
+drop_thresh = int(config('DROPTHRESH')) # suggested 100
 
 # Set pattern and replacement variables for strip_non_values() function call
 pattern = '(^$|^ $|^None$|^-$|^Unknown$)'
 replacement = np.nan
 
 # Set u_val_cap, maximum number of unique values for columns
-u_val_cap = ('COLTHRESH') # suggested 800
+u_val_cap = int(config('COLTHRESH')) # suggested 800
 
 # Null thresh is the max percentage threshold for null values per column.
-null_thresh =  config('NULLTHRESH') # suggested 0.75
+null_thresh =  float(config('NULLTHRESH')) # suggested 0.75
 
 # Number of columns that must be non-null for all rows
-no_null_cols = config('N_NULLCOLS') # suggested 11
+no_null_cols = int(config('N_NULLCOLS')) # suggested 11
 
 # Set training set random sample length variable
-sample_length = config('SAMPLENGTH') # suggested no less than 35000 rows - 50000 for larger (month+) time periods
+sample_length = int(config('SAMPLENGTH')) # suggested no less than 35000 rows - 35000 for larger (month+) time periods
 
-#List of Hyperparameter lists that to use for GridSearch.
-list_leaf_size = list(range(27,32)) #config('LEAF_SIZE_LIST')
-list_n_neighbors = list(range(1,15)) #config('K_N_LIST')
-list_p = list(range(1,3)) #config('P_LIST')
-list_algorithm = ['auto'] #config('ALGO_LIST')
-list_metric = ['minkowski'] #config('METRIC_LIST')
-list_weights = ['distance'] #config('DIST_LIST')
+#List of Hyperparameter lists to use for GridSearch hyperparameter tuning.
+list_leaf_size = [int(x) for x in config('SAMPLENGTH')] # Recommended default: list(range(27,32)) 
+list_n_neighbors = [int(x) for x in config('K_N_LIST')] # Recommended default: list(range(5,15)) 
+list_p =  [int(x) for x in config('P_LIST')] # Recommended default: list(range(1,3))
+list_algorithm = ['auto'] # Could switch for: config('ALGO_LIST')
+list_metric = ['minkowski'] # Could switch for: config('METRIC_LIST')
+list_weights = ['distance'] # Could switch for: config('DIST_LIST')
 
 knnargs = {
     'leaf_size':list_leaf_size, 'n_neighbors':list_n_neighbors,
@@ -107,7 +107,7 @@ metric = knnargs.get('metric', ['minkowski'])
 weights = knnargs.get('weights', ['distance'])
 
 # Set test_pct variable to determine the train/test split share
-test_pct = config('SAMPLENGTH') # Suggested 0.4
+test_pct = float(config('SAMPLENGTH')) # Suggested 0.4
 
 #
 #
