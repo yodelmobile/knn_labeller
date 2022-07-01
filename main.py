@@ -85,7 +85,7 @@ no_null_cols = int(config('N_NULLCOLS')) # suggested 11
 sample_length = int(config('SAMPLENGTH')) # suggested no less than 35000 rows - 35000 for larger (month+) time periods
 
 #List of Hyperparameter lists to use for GridSearch hyperparameter tuning.
-list_leaf_size = [int(x) for x in config('SAMPLENGTH')] # Recommended default: list(range(27,32)) 
+list_leaf_size = [int(x) for x in config('LEAFSIZE')] # Recommended default: list(range(27,32)) 
 list_n_neighbors = [int(x) for x in config('K_N_LIST')] # Recommended default: list(range(5,15)) 
 list_p =  [int(x) for x in config('P_LIST')] # Recommended default: list(range(1,3))
 list_algorithm = ['auto'] # Could switch for: config('ALGO_LIST')
@@ -107,7 +107,7 @@ metric = knnargs.get('metric', ['minkowski'])
 weights = knnargs.get('weights', ['distance'])
 
 # Set test_pct variable to determine the train/test split share
-test_pct = float(config('SAMPLENGTH')) # Suggested 0.4
+test_pct = float(config('TESTPCT')) # Suggested 0.4
 
 #
 #
