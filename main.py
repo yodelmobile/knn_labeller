@@ -121,10 +121,10 @@ test_pct = float(config('TESTPCT')) # Suggested 0.4
 #
 #
 ### 2.0 Import data
-def main(request):
+def main():
     
     #### Data import and selection ####
-    df_init = sql_from_bq_date(project, source_dataset, source_table, datetime_from, datetime_to)
+    #df_init = sql_from_bq_date(project, source_dataset, source_table, date_from, date_to)
 
 
     # Stage 1 data check 
@@ -153,12 +153,12 @@ def main(request):
     )
 
     df = df_use.copy()
-    
     #
     #
     #
     #
     #
+
     ### 3.0 Select and clean relevant data
 
     #### Function definitions ####
@@ -267,7 +267,7 @@ def main(request):
         # the .apply() method: x.astype('category').
         categorize_label = lambda x: x.astype('category')
         # Pass df[LABELS] to the lambda function above and assign back to df[LABELS] 
-        # to convert the subset of data df[LABELS] to type 'category'.
+        #to convert the subset of data df[LABELS] to type 'category'.
         df[LABELS] = categorize_label(df[LABELS])
         return(df)
 
@@ -331,6 +331,7 @@ def main(request):
     #
     #
     #
+
     #### Data Cleaning, normalization and encoding of dataframe ####
 
     # Use above defined low_row_drop() function to drop all rows that occur less than 100 times per unique channel value  
@@ -375,12 +376,12 @@ def main(request):
 
     # Run split_by_mask using null value 'channel' mask from above to split out train and prediction data
     train, pred = split_by_mask(df_conv, mask, selected_col=target_col)
-    
     #
     #
     #
     #
     #
+
     #### Sort values and reduce size of train set to reduce training time on machine ####
 
     # Set length of train
@@ -487,7 +488,8 @@ def main(request):
     #
     #
     #
-    #### KNN missing value imputation method including Grid Search to tune hyperparameters
+
+    #### KNN missing value imputation method from https://www.askpython.com/python/examples/impute-missing-data-values
 
     # Use above defined tts_func() to split the 'train' dataFrame into train and test sets
     X_train, X_test, y_train, y_test, X_pred, y_pred = tts_func(train_r, pred_r, target_col= target_col, test_size=test_pct)
@@ -520,7 +522,7 @@ def main(request):
     # Change colname of target_col in df_pred
     df_pred=df_pred.rename(columns = {target_col:target_new})
 
-    # Join the df_pred target_col_new onto pred DF
+    # Join the df_pred target_new column onto df_u to produce a 
     df_u = df_u.join(df_pred)
 
     # Copy target col of known DF df_k and name target_new
@@ -539,12 +541,20 @@ def main(request):
     
     df_final.loc[:,'__insert_date'] = time_now
 
+    # df_final[target_new] = df_final[target_new].replace(
+    #     [r'^.*Organic.*$', 'Apple.*$','Google (Ads|Ad[Ww]ords).*$','^.*(Facebook|Instagram|Messenger|IG).*$',
+    #      'TikTok.*$','^.*Snap.*$','^.*MOLOCO.*$'],
+    #     [r'Organic','Apple Search','Google Ads','Facebook','TikTok Ads','Snapchat Ads','MOLOCO'], 
+    #     regex=True
+    # )
+
     #
     #
     #
     #
     #
     ### 4.0 Merge and export data
+
 
     #### Merge processed data with previous by date and final to BigQuery ####
     # df_final = pd.concat([df_hold, df_final])
@@ -560,7 +570,8 @@ def main(request):
     print('Number of unique values in the channel column: {}'.format(channel_count))
     print('Number of unique values in the channel_new column: {}'.format(channel_new_count))
 
-    # final of df_final
+    # Final dataFrame df_final comprising of the original dataFrame df_init with the predictions, 
+    # and the existing measurements and confidance values and __insert_date as added columns
     df_final = df_final.reindex()
     
     # Pull existing database, combine new predictions and re-write result to existing DB
