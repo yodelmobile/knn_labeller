@@ -31,7 +31,7 @@ def df_to_bq(df, project, dataset, table):
             # example the "title" column uses pandas dtype "object", so its
             # data type is ambiguous.
             bigquery.SchemaField("date", bigquery.enums.SqlTypeNames.TIMESTAMP),
-            bigquery.SchemaField("__instert_date", bigquery.enums.SqlTypeNames.DATETIME),
+            bigquery.SchemaField("__insert_date", bigquery.enums.SqlTypeNames.DATETIME),
             # Indexes are written if included in the schema by name.
             bigquery.SchemaField("campaign_name", bigquery.enums.SqlTypeNames.STRING),
         ],
