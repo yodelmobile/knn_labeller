@@ -120,8 +120,8 @@ test_pct = float(config('TESTPCT')) # Suggested 0.4
 #
 #
 #
-### 2.0 Import data
-def main():
+### 2.0 Main func definition starting with import of data
+def main(request):
     
     #### Data import and selection ####
     #df_init = sql_from_bq_date(project, source_dataset, source_table, date_from, date_to)
