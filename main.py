@@ -582,5 +582,7 @@ def main(request):
     else:
         df_entire = df_final
     df_to_bq(df_entire, project, dest_dataset, dest_table);
-
-    print('Complete: {} rows written to {} project, {} dataset, {} table'.format(df_entire.shape[0], project, dest_dataset, dest_table))
+    
+    return_statement = 'Complete: {} rows written to {} project, {} dataset, {} table'.format(df_entire.shape[0], project, dest_dataset, dest_table)
+    
+    return(return_statement)
