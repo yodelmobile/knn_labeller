@@ -578,7 +578,7 @@ def main(request):
     if if_tbl_exists(project=project, dataset=dest_dataset, table=dest_table) == True:
         # Historic data, inc previous predictions is df_hist
         df_hist = sql_from_bq(project, dest_dataset, dest_table);
-        df_entire = concat_df(df_final, df_hist, date_from, date_to);
+        df_entire = concat_df(df_final, df_hist, datetime_from, datetime_to);
     else:
         df_entire = df_final
     df_to_bq(df_entire, project, dest_dataset, dest_table);
