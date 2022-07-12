@@ -585,4 +585,6 @@ def main(request):
     
     return_statement = 'Complete: {} rows written to {} project, {} dataset, {} table'.format(df_entire.shape[0], project, dest_dataset, dest_table)
     
+    print('Complete: {} rows written to {} project, {} dataset, {} table'.format(df_entire.shape[0], project, dest_dataset, dest_table))
+    
     return(return_statement)
