@@ -126,7 +126,6 @@ def main(request):
     #### Data import and selection ####
     df_init = sql_from_bq_date(project, source_dataset, source_table, date_from, date_to)
 
-
     # Stage 1 data check 
     unique_cols_count = df_init.nunique()
     channel_count = len(df_init['channel'].unique())
@@ -166,22 +165,22 @@ def main(request):
         """Function to drop any rows from *df* that have a *column* value that appears less than *thresh*  
         times and return truncated DataFrame accepts kwargs """
         thresh = kwargs.get("thresh", 100)
-        defalut_colname = df.columns[0]
-        column = kwargs.get("column", defalut_colname)
+        default_colname = df.columns[0]
+        column = kwargs.get("column", default_colname)
         # Check  
         if isinstance(column,str):
             if column in df.columns:
                 # Count number of rows per column value 
-                counts = df[column].value_counts()
+                counts = df.loc[:,column].value_counts()
                 # Mask df with counts, dropping all rows that occur less than thresh times
-                df = df[~df[column].isin(counts[counts <= thresh].index)]
+                df = df[~df.loc[:,column].isin(counts[counts <= thresh].index)]
                 return df
             else:
                 print(column + ": str-like column name not present in df")
         elif isinstance(column,list):
             for c in column:
-                counts = df[c].value_counts()
-                df = df[~df[c].isin(counts[counts <= thresh].index)]
+                counts = df.loc[:,c].value_counts()
+                df = df[~df.loc[:,c].isin(counts[counts <= thresh].index)]
         else:
             print('Keyword argument "column" is neither string nor list type')
         return df
@@ -209,7 +208,7 @@ def main(request):
         # Set selectall value to default True - This selectall 
         selectall = kwargs.get("selectall", True)
         # Strip out any whitespace on either side of values in the selected columns
-        df[columns] = df[columns].apply(lambda x: x.str.strip())
+        df.loc[:,columns] = df.loc[:,columns].apply(lambda x: x.str.strip())
         # Replace all spaces, empty and 'None' values with np.nan/NULL
         df.replace(pattern, repl, regex=regex, inplace=True)
         return df
@@ -268,8 +267,9 @@ def main(request):
         categorize_label = lambda x: x.astype('category')
         # Pass df[LABELS] to the lambda function above and assign back to df[LABELS] 
         #to convert the subset of data df[LABELS] to type 'category'.
-        df[LABELS] = categorize_label(df[LABELS])
+        df.loc[:,LABELS] = categorize_label(df.loc[:,LABELS])
         return(df)
+
 
     # Function to take in one dataFrame and return two dataframes,
     # one 'train' with all non null column values for use in train/test operations 
@@ -285,8 +285,8 @@ def main(request):
         selected_col = kwargs.get('selected_col', df.columns[0])
         # default_mask = df[[selected_col]].notnull().all(1)
         # mask = df[[selected_col]].notnull().all(1)
-        df_unknown = df[~mask]  # Filter by inverse of mask
-        df_known = df[mask]  # Filter by mask
+        df_unknown = df.loc[~mask]  # Filter by inverse of mask
+        df_known = df.loc[mask]  # Filter by mask
         return(df_known, df_unknown)
 
     # LabelEncoder() specific functions for establishing column specific label encoders.
@@ -360,10 +360,10 @@ def main(request):
     floats = df.select_dtypes(include=['float64']).columns.tolist()
 
     # Replace nan floats with 0
-    df[floats] = df[floats].replace(np.nan, 0)
+    df.loc[:,floats] = df.loc[:,floats].replace(np.nan, 0)
 
     # Replace nan objects with "" empty string
-    df[objects] = df[objects].fillna('')
+    df.loc[:,objects] = df.loc[:,objects].fillna('')
 
     # Call above defined df_col_type_change() function to change all 'object' dtype columns to 'category' dtype
     df = col_type_change(df, select_type='object', change_type='category')
@@ -541,14 +541,6 @@ def main(request):
     
     df_final.loc[:,'__insert_date'] = time_now
 
-    # df_final[target_new] = df_final[target_new].replace(
-    #     [r'^.*Organic.*$', 'Apple.*$','Google (Ads|Ad[Ww]ords).*$','^.*(Facebook|Instagram|Messenger|IG).*$',
-    #      'TikTok.*$','^.*Snap.*$','^.*MOLOCO.*$'],
-    #     [r'Organic','Apple Search','Google Ads','Facebook','TikTok Ads','Snapchat Ads','MOLOCO'], 
-    #     regex=True
-    # )
-
-    #
     #
     #
     #
