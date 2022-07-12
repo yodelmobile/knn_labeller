@@ -569,7 +569,19 @@ def main(request):
     print('Number of cols in df_final with only one value: {}'.format((unique_cols_count==1).sum()))
     print('Number of unique values in the channel column: {}'.format(channel_count))
     print('Number of unique values in the channel_new column: {}'.format(channel_new_count))
+    
+    # Set any NULL values of target_new in df_final as the existing values of values of target_col
+    df_final.loc[:,target_new] = np.where(df_final[target_new].isnull(), df_final[target_col], df_final[target_new])
+    df_final.loc[:,prob_head] = np.where(df_final[prob_head].isnull(), 1.0, 1.0)
 
+    # Normalise any missed target_new values using regex as before
+    df_final.loc[:,target_new] = df_final.loc[:,target_new].replace(
+        [r'^.*Organic.*$', 'Apple.*$','Google (Ads|Ad[Ww]ords).*$','^.*(Facebook|Instagram|Messenger|IG).*$',
+         'TikTok.*$','^.*Snap.*$','^.*MOLOCO.*$'],
+        [r'Organic','Apple Search','Google Ads','Facebook','TikTok Ads','Snapchat Ads','MOLOCO'], 
+        regex=True
+    )
+    
     # Final dataFrame df_final comprising of the original dataFrame df_init with the predictions, 
     # and the existing measurements and confidance values and __insert_date as added columns
     df_final = df_final.reindex()
