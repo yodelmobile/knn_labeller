@@ -394,6 +394,10 @@ def main(request):
     pred_r = pred.sort_values('date',ascending = False)
 
     train_r = train_r.sort_values('date',ascending = False)
+    
+    # Print status of function
+    print('Data cleaned and encoded for grid search, train/test set is {} rows and prediction set is {} rows'.format(
+        train_r.shape[0],pred_r.shape[0]))
     #
     #
     #
