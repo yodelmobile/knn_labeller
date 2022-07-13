@@ -94,7 +94,7 @@ list_n_neighbors = [int(x) for x in n_neighbors_tmp] # Recommended default: list
 p_tmp = config('P_LIST')
 p_tmp = p_tmp.split(',')
 list_p =  [int(x) for x in p_tmp] # Recommended default: list(range(1,3))
-config('ALGO_LIST') # Recommended default is list_algorithm = 'ball_tree'
+algorithm_tmp = config('ALGO_LIST') # Recommended default is list_algorithm = 'ball_tree'
 list_algorithm = algorithm_tmp.split(',')
 list_metric = ['minkowski'] # Could switch for: config('METRIC_LIST')
 list_weights = ['distance'] # Could switch for: config('DIST_LIST')
