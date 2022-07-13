@@ -562,9 +562,19 @@ def main(request):
     print('Number of unique values in the channel column: {}'.format(channel_count))
     print('Number of unique values in the channel_new column: {}'.format(channel_new_count))
     
-    # Set any NULL values of target_new in df_final as the existing values of values of target_col
-    df_final.loc[:,target_new] = np.where(df_final[target_new].isnull(), df_final[target_col], df_final[target_new])
-    df_final.loc[:,prob_head] = np.where(df_final[prob_head].isnull(), 1.0, 1.0)
+    ## Final pre-upload clean of channel, channel_new and channel_probs columns
+    # Use strip_non_values() to remove any empty strings from target_col, target_new and prob_head columns
+    df_final.loc[:,[target_col,target_new, prob_head]] = strip_non_values(
+        df_final.loc[:,[target_col,target_new, prob_head]], pattern = pattern, repl = np.nan, regex = True
+    )
+    # For any rows where target_new is NULL & target_col is nonNULL, 
+    # set target_col value for target_new, else keep target_new
+    df_final.loc[:,target_new] = np.where((df_final[target_new].isnull() & ~df_final[target_col].isnull()), 
+                                          df_final[target_col], df_final[target_new])
+    # For any rows with NULL values of prob_head & nonNULL values for target_new, set 1.0 for 
+    # prob_head else keep prob_head 
+    df_final.loc[:,prob_head] = np.where((df_final[prob_head].isnull()) & (~df_final[target_new].isnull()),
+                                         1.0, df_final[prob_head])
 
     # Normalise any missed target_new values using regex as before
     df_final.loc[:,target_new] = df_final.loc[:,target_new].replace(
@@ -578,7 +588,7 @@ def main(request):
     # and the existing measurements and confidance values and __insert_date as added columns
     df_final = df_final.reindex()
     
-    # Pull existing database, combine new predictions and re-write result to existing DB
+    # Pull existing database, concat/overwrite new predictions by date and re-write result to existing DB
     if if_tbl_exists(project=project, dataset=dest_dataset, table=dest_table) == True:
         # Historic data, inc previous predictions is df_hist
         df_hist = sql_from_bq(project, dest_dataset, dest_table);
