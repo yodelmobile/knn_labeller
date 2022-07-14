@@ -98,6 +98,7 @@ algorithm_tmp = config('ALGO_LIST') # Recommended default is list_algorithm = 'b
 list_algorithm = algorithm_tmp.split(',')
 list_metric = ['minkowski'] # Could switch for: config('METRIC_LIST')
 list_weights = ['distance'] # Could switch for: config('DIST_LIST')
+cv_val = config('CV_FOLDS')
 
 knnargs = {
     'leaf_size':list_leaf_size, 'n_neighbors':list_n_neighbors,
@@ -135,24 +136,20 @@ def main(request):
     print('Number of cols with only one value: {}'.format((unique_cols_count==1).sum()))
     print('Number of unique values in the channel column: {}'.format(channel_count))
 
-    # df_hold is already predicted data
-    df_hold = df_init.loc[df_init['date'] <= datetime_from]
-
     # df_use is the recent data to be used to train and predict
-    df_use = df_init.loc[df_init['date'] > datetime_from]
+    df = df_init.copy()
 
     # Normalise the target_col column of df using regex
 
     #### Regex to normailze existing target_col values ####
     # Use regex replace on target col with pattern to find and normalize values
-    df_use.loc[:,target_col] = df_use.loc[:,target_col].replace(
+    df.loc[:,target_col] = df.loc[:,target_col].replace(
         [r'^.*Organic.*$', 'Apple.*$','Google (Ads|Ad[Ww]ords).*$','^.*(Facebook|Instagram|Messenger|IG).*$',
          'TikTok.*$','^.*Snap.*$','^.*MOLOCO.*$'],
         [r'Organic','Apple Search','Google Ads','Facebook','TikTok Ads','Snapchat Ads','MOLOCO'], 
         regex=True
     )
 
-    df = df_use.copy()
     #
     #
     #
@@ -463,7 +460,7 @@ def main(request):
         pipeline = Pipeline(steps)
 
         # Use GridSearch to discern highest accuracy hyperparameters
-        clf = GridSearchCV(pipeline, hyperparameters, cv=10, scoring='accuracy')
+        clf = GridSearchCV(pipeline, hyperparameters, cv=cv_val, scoring='accuracy')
 
         # Fit the model
         result = clf.fit(X_train,y_train)
