@@ -1,6 +1,7 @@
 ### 0.0 Add libraries
 
 # Import funciton libraries
+import functions_framework
 import requests
 from datetime import date, timedelta, datetime, timezone
 import logging
