@@ -98,7 +98,7 @@ algorithm_tmp = config('ALGO_LIST') # Recommended default is list_algorithm = 'b
 list_algorithm = algorithm_tmp.split(',')
 list_metric = ['minkowski'] # Could switch for: config('METRIC_LIST')
 list_weights = ['distance'] # Could switch for: config('DIST_LIST')
-cv_val = config('CV_FOLDS')
+cv_val = int(config('CV_FOLDS'))
 
 knnargs = {
     'leaf_size':list_leaf_size, 'n_neighbors':list_n_neighbors,
