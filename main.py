@@ -595,6 +595,7 @@ def main(request):
     if if_tbl_exists(project=project, dataset=dest_dataset, table=dest_table) == True:
         # Historic data, inc previous predictions is df_hist
         df_hist = sql_from_bq(project, dest_dataset, dest_table);
+        print('Extracted: {} rows of historic data pulled from {} table'.format(df_hist.shape[0], dest_table)
         df_entire = concat_df(df_final, df_hist, datetime_from, datetime_to);
     else:
         df_entire = df_final
