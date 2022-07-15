@@ -131,11 +131,10 @@ def main(request):
 
     # Stage 1 data check 
     unique_cols_count = df_init.nunique()
-    channel_count = len(df_init['channel'].unique())
-    print('Number of rows in df_init: {}'.format(df_init.shape[0]))
-    print('Number of columns in df_init: {}'.format(df_init.shape[1]))
-    print('Number of cols with only one value: {}'.format((unique_cols_count==1).sum()))
-    print('Number of unique values in the channel column: {}'.format(channel_count))
+    channel_count = len(df_init[target_col].unique())
+    print('df_init rows: {}; columns: {}; single value columns: {}; unique {} column values: {}'.format(
+        df_init.shape[0],df_init.shape[1],(unique_cols_count==1).sum(),target_col,channel_count)
+    )
 
     # df_use is the recent data to be used to train and predict
     df = df_init.copy()
@@ -542,28 +541,11 @@ def main(request):
     # Join the 'channel_new' column of the concatenated dfs from above onto df_final
     df_final = df_init.join(df_new_j)
     
+    # Add __insert_date column to dataFrame
     df_final.loc[:,'__insert_date'] = time_now
 
-    #
-    #
-    #
-    #
-    ### 4.0 Merge and export data
-
-
-    #### Merge processed data with previous by date and final to BigQuery ####
-    # df_final = pd.concat([df_hold, df_final])
+    # Sort dataFrame by date
     df_final.sort_values(by='date', inplace=True)
-
-    # Final stage data check 
-    unique_cols_count = df_final.nunique()
-    channel_count = len(df_final['channel'].unique())
-    channel_new_count = len(df_final['channel_new'].unique())
-    print('Number of rows in df_final: {}'.format(df_final.shape[0]))
-    print('Number of columns in df_final: {}'.format(df_final.shape[1]))
-    print('Number of cols in df_final with only one value: {}'.format((unique_cols_count==1).sum()))
-    print('Number of unique values in the channel column: {}'.format(channel_count))
-    print('Number of unique values in the channel_new column: {}'.format(channel_new_count))
     
     ## Final pre-upload clean of channel, channel_new and channel_probs columns
     # Use strip_non_values() to remove any empty strings from target_col, target_new and prob_head columns
@@ -587,14 +569,31 @@ def main(request):
         regex=True
     )
     
+    # Final stage data check 
+    unique_cols_count = df_final.nunique()
+    channel_count = len(df_final[target_col].unique())
+    channel_new_count = len(df_final[target_new].unique())
+    print('df_final rows: {}; columns: {}; single value columns: {}; unique {} column values: {}; unique {} column values: {}'.format(
+        df_final.shape[0],df_final.shape[1],(unique_cols_count==1).sum(),target_col,channel_count,target_new,channel_new_count)
+    )
+    
     # Final dataFrame df_final comprising of the original dataFrame df_init with the predictions, 
     # and the existing measurements and confidance values and __insert_date as added columns
     df_final = df_final.reindex()
     
-    # Pull existing database, concat/overwrite new predictions by date and re-write result to existing DB
+    #
+    #
+    #
+    #
+    ### 4.0 Merge and export data
+
+
+    #### Merge processed data with previous by date and final to BigQuery ####
+    # Pull existing database, concat/overwrite new predictions by date and re-write result to existing DB IF destination table already exists in BQ, otherwise create
     if if_tbl_exists(project=project, dataset=dest_dataset, table=dest_table) == True:
         # Historic data, inc previous predictions is df_hist
         df_hist = sql_from_bq(project, dest_dataset, dest_table);
+        # Concatenate historif data with newly processed dataframe, deduplicating by date
         df_entire = concat_df(df_final, df_hist, datetime_from, datetime_to);
         print('Extracted: {} rows of historic data; {} rows of combined data'.format(df_hist.shape[0], df_entire.shape[0]));      
     else:
